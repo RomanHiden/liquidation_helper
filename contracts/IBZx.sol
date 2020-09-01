@@ -7,13 +7,13 @@ pragma solidity >=0.5.0 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 interface IBZx {
-
     ////// Loan Closings //////
 
     function liquidate(
         bytes32 loanId,
         address receiver,
-        uint256 closeAmount) // denominated in loanToken
+        uint256 closeAmount // denominated in loanToken
+    )
         external
         payable
         returns (
@@ -22,9 +22,9 @@ interface IBZx {
             address seizedToken
         );
 
-    
     struct LoanReturnData {
         bytes32 loanId;
+        uint96 endTimestamp;
         address loanToken;
         address collateralToken;
         uint256 principal;
@@ -36,7 +36,6 @@ interface IBZx {
         uint256 maintenanceMargin;
         uint256 currentMargin;
         uint256 maxLoanTerm;
-        uint256 endTimestamp;
         uint256 maxLiquidatable;
         uint256 maxSeizable;
     }
@@ -47,13 +46,10 @@ interface IBZx {
         uint256 count,
         uint256 loanType,
         bool isLender,
-        bool unsafeOnly)
-        external
-        view
-        returns (LoanReturnData[] memory loansData);
+        bool unsafeOnly
+    ) external view returns (LoanReturnData[] memory loansData);
 
-    function getLoan(
-        bytes32 loanId)
+    function getLoan(bytes32 loanId)
         external
         view
         returns (LoanReturnData memory loanData);
@@ -61,14 +57,31 @@ interface IBZx {
     function getActiveLoans(
         uint256 start,
         uint256 count,
-        bool unsafeOnly)
+        bool unsafeOnly
+    ) external view returns (LoanReturnData[] memory loansData);
+
+    function swapExternal(
+        address sourceToken,
+        address destToken,
+        address receiver,
+        address returnToSender,
+        uint256 sourceTokenAmount,
+        uint256 requiredDestTokenAmount,
+        bytes calldata swapData
+    )
         external
-        view
-        returns (LoanReturnData[] memory loansData);
+        payable
+        returns (
+            uint256 destTokenAmountReceived,
+            uint256 sourceTokenAmountUsed
+        );
 
-    function tmpReduceToMarginLevel(
-        bytes32 loanId,
-        uint256 desiredMargin)
+    function getSwapExpectedReturn(
+        address sourceToken,
+        address destToken,
+        uint256 sourceTokenAmount
+    ) external view returns (uint256);
+
+    function tmpReduceToMarginLevel(bytes32 loanId, uint256 desiredMargin)
         external;
-
 }

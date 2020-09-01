@@ -37,7 +37,7 @@ contract bZxFlashLoaner {
         address iToken,
         uint256 loanAmount
     ) internal {
-        IERC20(loanToken).transfer(address(iToken), loanAmount);
+        IERC20(loanToken).transfer(iToken, loanAmount);
     }
 
     function afterLoanStepsBzx(

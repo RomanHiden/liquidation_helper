@@ -11,8 +11,8 @@ const listen = async (world) => {
 
     let activeLoans = await Bzx.methods.getActiveLoans(0, 100, true).call();
     activeLoans.forEach(async (loan) => {
-      processLiquidatableLoan(world, loan);
       // console.table(loan);
+      processLiquidatableLoan(world, loan);
     })
     console.log(`\nCount - ${activeLoans.length}`);
 
@@ -34,7 +34,7 @@ const processLiquidatableLoan = (world, loan) => {
   } else if (flashLoanPlatformSwitch.length === 2) {
     txParams.flashLoanPlatform = process.env.FLASHLOAN_PREFERENCE
   } else {
-    throw new Error(`Unhandled Platforms: ${flashLoanPlatformSwitch.length}`);
+    throw new Error(`Unhandled Platforms`);
   }
 
   createLiquidationTxn(world, loan, txParams);
@@ -46,16 +46,18 @@ const createLiquidationTxn = async (world, loan, txParams) => {
     const Liquidator = new world.web3.eth.Contract(LiquidatorJson.abi, world.contractAddresses.Liquidator);
     const collateralReceiver = process.env.COLLATERAL_RECEIVER || world.accounts[0];
 
-    let functionName;
+    let data;
     if (txParams.flashLoanPlatform === 1) {
-      functionName = 'startWithDyDx';
+      data = Liquidator.methods['startWithDyDx'](world.contractAddresses.dydx.solo, loan.loanToken, loan.collateralToken,
+        world.contractAddresses.Bzx, loan.loanId, collateralReceiver, loan.maxLiquidatable)
+        .encodeABI();
     } else {
-      functionName = 'startWithBzx';
-    }
+      const iTokenAddress = getITokenAddressFromLoanToken(world, loan.loanToken);
 
-    let data = Liquidator.methods[functionName](world.contractAddresses.dydx.solo, loan.loanToken, loan.collateralToken,
-      world.contractAddresses.Bzx, loan.loanId, collateralReceiver, loan.maxLiquidatable)
-      .encodeABI();
+      data = Liquidator.methods['startWithBzx'](iTokenAddress, loan.loanToken, loan.collateralToken,
+        world.contractAddresses.Bzx, loan.loanId, collateralReceiver, loan.maxLiquidatable)
+        .encodeABI();
+    }
 
     let gasPrice = await getGasPrice(world);
 
@@ -74,7 +76,7 @@ const createLiquidationTxn = async (world, loan, txParams) => {
 
   } catch (error) {
     throw error;
-  }   
+  }
 }
 
 const sendSignedTx = (world, signedTx) => {
@@ -100,14 +102,25 @@ const getSwitchForFlashLoan = (world, loanTokenAddress) => {
   });
 
   // For BZX - 2
-  const bzxFlashLoanTokens = world.contractAddresses.iTokenList;
-  bzxFlashLoanTokens.forEach(bzxFlashLoanToken => {
-    if (loanTokenAddress.toLowerCase() == bzxFlashLoanToken.toLowerCase()) {
+  const bzxTokens = world.contractAddresses.iTokenList;
+  bzxTokens.forEach(bzxToken => {
+    if (loanTokenAddress.toLowerCase() === bzxToken[2].toLowerCase()) {
       platformSwitch.push(2);
     }
   });
 
   return platformSwitch;
+}
+
+const getITokenAddressFromLoanToken = (world, loanTokenAddr) => {
+  const bzxTokens = world.contractAddresses.iTokenList;
+  for (let i = 0; i < bzxTokens.length; i++) {
+    let bzxToken = bzxTokens[i];
+
+    if (loanTokenAddr.toLowerCase() === bzxToken[2].toLowerCase()) {
+      return bzxToken[1];
+    }
+  }
 }
 
 module.exports = {

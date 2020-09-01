@@ -59,8 +59,8 @@ module.exports = {
 
     kovan: {
       provider: () => new HDWalletProvider(
-          process.env.MNEMONIC,
-          process.env.KOVAN_PROVIDER_URL,
+          process.env.MNEMONIC_OR_KEY,
+          `https://kovan.infura.io/v3/${process.env.INFURA_ID}`,
           0, //address_index
           10, // num_addresses
           true // shareNonce
@@ -74,8 +74,8 @@ module.exports = {
 
     mainnet: {
       provider: () => new HDWalletProvider(
-          process.env.MNEMONIC,
-          process.env.MAINNET_PROVIDER_URL,
+          process.env.MNEMONIC_OR_KEY,
+          `https://mainnet.infura.io/v3/${process.env.INFURA_ID}`,
           0, //address_index
           10, // num_addresses
           true // shareNonce
@@ -107,7 +107,7 @@ module.exports = {
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
       settings: {          // See the solidity docs for advice about optimization and evmVersion
        optimizer: {
-         enabled: false,
+         enabled: true,
          runs: 200
        },
       //  evmVersion: "byzantium"

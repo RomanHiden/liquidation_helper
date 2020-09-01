@@ -10,7 +10,7 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
     event Logger(uint256 value);
 
     uint8 public soloFees = 2 wei;
-    uint public bZxFeePercentage = 5e16; // 0.05%
+    uint256 public bZxFeePercentage = 5e16; // 0.05%
 
     struct CallData {
         address bZxAddress;
@@ -49,9 +49,7 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
             receiver: receiver,
             collateralToken: collateralToken,
             flashLoanAmount: flashLoanAmount,
-            iniCollateralTokenBal: IERC20(collateralToken).balanceOf(
-                address(this)
-            )
+            iniCollateralTokenBal: IERC20(collateralToken).balanceOf(receiver)
         });
         initateFlashLoan(dydxSolo, loanToken, flashLoanAmount);
     }
@@ -70,15 +68,10 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         );
 
         uint256 finalCollateralTokenBal = IERC20(_callData.collateralToken)
-            .balanceOf(address(this));
+            .balanceOf(_callData.receiver);
         require(
             finalCollateralTokenBal >= _callData.iniCollateralTokenBal,
             "Liquidation not profitable"
-        );
-
-        transferTokenInternal(
-            _callData.collateralToken,
-            finalCollateralTokenBal
         );
 
         // logTokenBalance(loanedTokenAddress);
@@ -93,11 +86,15 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         address receiver,
         uint256 flashLoanAmount
     ) public payable {
-        uint256 repayAmount = flashLoanAmount.add(
-            flashLoanAmount.mul(bZxFeePercentage).div(1e18)
-        );
+        uint256 flashLoanFee = flashLoanAmount.mul(bZxFeePercentage).div(1e20);
+        uint256 repayAmount = flashLoanAmount.add(flashLoanFee);
+
         if (IERC20(loanToken).balanceOf(address(this)) < repayAmount) {
-            IERC20(loanToken).transferFrom(msg.sender, address(this), soloFees);
+            IERC20(loanToken).transferFrom(
+                msg.sender,
+                address(this),
+                flashLoanFee + 1
+            );
         }
 
         _callDataBzx = CallDataBzx({
@@ -126,18 +123,50 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         address receiver,
         uint256 flashLoanAmount
     ) public {
-        liquidateBzxLoan(bZxAddress, loanId, receiver, flashLoanAmount);
+        if (IERC20(loanToken).allowance(address(this), bZxAddress) < flashLoanAmount) {
+            IERC20(loanToken).approve(bZxAddress, flashLoanAmount);
+        }
+        liquidateBzxLoan(bZxAddress, loanId, address(this), flashLoanAmount);
 
         uint256 finalCollateralTokenBal = IERC20(collateralToken).balanceOf(
             address(this)
         );
         require(
-            finalCollateralTokenBal >= _callDataBzx.iniCollateralTokenBal,
+            finalCollateralTokenBal > _callDataBzx.iniCollateralTokenBal,
             "Liquidation not profitable"
         );
 
+        uint256 finalLoanTokenBal = IERC20(loanToken).balanceOf(address(this));
+        if (finalLoanTokenBal < _callDataBzx.loanTokenRepayAmount) {
+            // swap collateral token with loan token
+            uint256 collateralTokenProfit = finalCollateralTokenBal.sub(
+                _callDataBzx.iniCollateralTokenBal
+            );
+            uint256 requiredLoanTokenAmount = _callDataBzx
+                .loanTokenRepayAmount
+                .sub(finalLoanTokenBal);
+
+            if (
+                IERC20(collateralToken).allowance(address(this), bZxAddress) <
+                collateralTokenProfit
+            ) {
+                IERC20(collateralToken).approve(
+                    bZxAddress,
+                    collateralTokenProfit
+                );
+            }
+            IBZx(bZxAddress).swapExternal(
+                collateralToken,
+                loanToken,
+                address(this),
+                address(this),
+                collateralTokenProfit,
+                requiredLoanTokenAmount,
+                ""
+            );
+        }
+
         repayFlashLoanBzx(loanToken, iToken, _callDataBzx.loanTokenRepayAmount);
-        transferTokenInternal(collateralToken, finalCollateralTokenBal);
     }
 
     // closeAmount is denominated in loanToken

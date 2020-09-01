@@ -37,7 +37,7 @@ contract DydxFlashloaner is ICallee, DydxFlashloanBase {
     }
 
     function initateFlashLoan(address _solo, address _token, uint256 _amount)
-        public
+        internal
     {
         ISoloMargin solo = ISoloMargin(_solo);
 

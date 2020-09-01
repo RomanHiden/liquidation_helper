@@ -2,4 +2,8 @@
 build:
 	npx truffle build
 
-.PHONY: build deploy-pooltoken deploy-tokenization-master
+# eg: make deploy-liquidator network=kovan
+deploy-liquidator: build
+	npx truffle exec --network $(network) scripts/deploy-liquidator.js
+
+.PHONY: build deploy-liquidator
