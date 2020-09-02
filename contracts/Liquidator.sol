@@ -57,8 +57,16 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
     function afterLoanSteps(address loanedTokenAddress, uint256 repayAmount)
         internal
     {
-        repayAmount; // shh
-        loanedTokenAddress; // shh
+        address bZxAddress = _callData.bZxAddress;
+        if (
+            IERC20(loanedTokenAddress).allowance(address(this), bZxAddress) <
+            _callData.flashLoanAmount
+        ) {
+            IERC20(loanedTokenAddress).approve(
+                bZxAddress,
+                _callData.flashLoanAmount
+            );
+        }
 
         liquidateBzxLoan(
             _callData.bZxAddress,
@@ -74,7 +82,39 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
             "Liquidation not profitable"
         );
 
-        // logTokenBalance(loanedTokenAddress);
+        uint256 finalLoanTokenBal = IERC20(loanedTokenAddress).balanceOf(
+            address(this)
+        );
+        if (finalLoanTokenBal < repayAmount) {
+            // swap collateral token with loan token
+            uint256 collateralTokenProfit = finalCollateralTokenBal.sub(
+                _callData.iniCollateralTokenBal
+            );
+            uint256 requiredLoanTokenAmount = repayAmount.sub(
+                finalLoanTokenBal
+            );
+
+            if (
+                IERC20(_callData.collateralToken).allowance(
+                    address(this),
+                    bZxAddress
+                ) < collateralTokenProfit
+            ) {
+                IERC20(_callData.collateralToken).approve(
+                    bZxAddress,
+                    collateralTokenProfit
+                );
+            }
+            IBZx(bZxAddress).swapExternal(
+                _callData.collateralToken,
+                loanedTokenAddress,
+                address(this),
+                address(this),
+                collateralTokenProfit,
+                requiredLoanTokenAmount,
+                ""
+            );
+        }
     }
 
     function startWithBzx(
@@ -123,7 +163,11 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         address receiver,
         uint256 flashLoanAmount
     ) public {
-        if (IERC20(loanToken).allowance(address(this), bZxAddress) < flashLoanAmount) {
+        receiver;    // shh
+        if (
+            IERC20(loanToken).allowance(address(this), bZxAddress) <
+            flashLoanAmount
+        ) {
             IERC20(loanToken).approve(bZxAddress, flashLoanAmount);
         }
         liquidateBzxLoan(bZxAddress, loanId, address(this), flashLoanAmount);
