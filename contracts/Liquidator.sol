@@ -11,7 +11,7 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
     event Logger(uint256 value);
 
     uint8 public soloFees = 2 wei;
-    // uint256 public bZxFeePercentage = 5e16; // 0.05%
+    uint256 public bZxFeePercentage = 5e16; // 0.05%
 
     struct CallData {
         address bZxAddress;
@@ -128,17 +128,18 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         address receiver,
         uint256 flashLoanAmount
     ) public payable {
-        // uint256 flashLoanFee = flashLoanAmount.mul(bZxFeePercentage).div(1e20);
-        // uint256 repayAmount = flashLoanAmount; //.add(flashLoanFee);
+        uint256 flashLoanFee = flashLoanAmount.mul(bZxFeePercentage).div(1e20);
+        uint256 repayAmount = flashLoanAmount.add(flashLoanFee);
 
         // if (IERC20(loanToken).balanceOf(address(this)) < repayAmount) {
+        //     require(false, "fuck life");
         //     IERC20(loanToken).transferFrom(
         //         msg.sender,
         //         address(this),
         //         flashLoanFee + 1
         //     );
         // }
-
+    
         _callDataBzx = CallDataBzx({
             iniCollateralTokenBal: IERC20(collateralToken).balanceOf(
                 address(this)
@@ -167,7 +168,10 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         address receiver,
         uint256 flashLoanAmount
     ) public {
+
+        require(false, "fail loan");
         receiver;    // shh
+       
         if (
             IERC20(loanToken).allowance(address(this), bZxAddress) <
             flashLoanAmount

@@ -15,7 +15,9 @@ process.on('uncaughtException', err => {
 
 const network = process.env.NETWORK || 'kovan';
 
-let provider = new HDWalletProvider(process.env.MNEMONIC_OR_KEY, `https://${network}.infura.io/v3/${process.env.INFURA_ID}`);
+// let provider = new HDWalletProvider(process.env.MNEMONIC_OR_KEY, `https://${network}.infura.io/v3/${process.env.INFURA_ID}`);
+let provider = new HDWalletProvider(process.env.MNEMONIC_OR_KEY, "https://localhost:/8545");
+
 const web3 = new Web3(provider);
 
 const interval = 15;

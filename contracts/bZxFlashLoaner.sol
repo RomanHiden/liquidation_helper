@@ -15,6 +15,7 @@ contract bZxFlashLoaner {
         uint256 flashLoanAmount
     ) internal {
         BzxITokenInterface iTokenContract = BzxITokenInterface(iToken);
+
         iTokenContract.flashBorrow(
             flashLoanAmount,
             address(this),
@@ -32,6 +33,7 @@ contract bZxFlashLoaner {
                 flashLoanAmount
             )
         );
+        require(false, "un fuck life");
     }
 
     function repayFlashLoanBzx(
