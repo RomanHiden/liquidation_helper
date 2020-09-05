@@ -12,7 +12,6 @@ const listen = async (world) => {
     let activeLoans = await Bzx.methods.getActiveLoans(0, 1, true).call();
     activeLoans.forEach(async (loan) => {
       // console.table(loan);
-      if(loan.loanId == "0x3b904d02a0301fc101a4db24107cda6516b2051069def924abd58c2d4832b52d")
       processLiquidatableLoan(world, loan);
     })
     console.log(`\nCount - ${activeLoans.length}`);
