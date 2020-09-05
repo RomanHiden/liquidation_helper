@@ -14,3 +14,6 @@ package-lock.json
 
 # editor settings - vscode
 .vscode
+
+
+__pycache__
