@@ -9,6 +9,7 @@ contract bZxFlashLoaner {
         address loanToken,
         address collateralToken,
         address bZxAddress,
+        address oneInchAddress,
         bytes32 loanId,
         address receiver,
         uint256 flashLoanAmount
@@ -20,11 +21,12 @@ contract bZxFlashLoaner {
             address(this),
             "",
             abi.encodeWithSignature(
-                "afterLoanStepsBzx(address,address,address,address,bytes32,address,uint256)",
+                "afterLoanStepsBzx(address,address,address,address,address,bytes32,address,uint256)",
                 iToken,
                 loanToken,
                 collateralToken,
                 bZxAddress,
+                oneInchAddress,
                 loanId,
                 receiver,
                 flashLoanAmount
@@ -45,6 +47,7 @@ contract bZxFlashLoaner {
         address loanToken,
         address collateralToken,
         address bZxAddress,
+        address oneInchAddress,
         bytes32 loanId,
         address receiver,
         uint256 flashLoanAmount

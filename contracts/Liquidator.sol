@@ -5,12 +5,13 @@ import "./DydxFlashloaner.sol";
 import "./bZxFlashLoaner.sol";
 import "./Ownable.sol";
 import "./IBZx.sol";
+import "./IOneSplit.sol";
 
 contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
     event Logger(uint256 value);
 
     uint8 public soloFees = 2 wei;
-    uint256 public bZxFeePercentage = 5e16; // 0.05%
+    // uint256 public bZxFeePercentage = 5e16; // 0.05%
 
     struct CallData {
         address bZxAddress;
@@ -122,32 +123,34 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         address loanToken,
         address collateralToken,
         address bZxAddress,
+        address oneInchAddress,
         bytes32 loanId,
         address receiver,
         uint256 flashLoanAmount
     ) public payable {
-        uint256 flashLoanFee = flashLoanAmount.mul(bZxFeePercentage).div(1e20);
-        uint256 repayAmount = flashLoanAmount.add(flashLoanFee);
+        // uint256 flashLoanFee = flashLoanAmount.mul(bZxFeePercentage).div(1e20);
+        // uint256 repayAmount = flashLoanAmount; //.add(flashLoanFee);
 
-        if (IERC20(loanToken).balanceOf(address(this)) < repayAmount) {
-            IERC20(loanToken).transferFrom(
-                msg.sender,
-                address(this),
-                flashLoanFee + 1
-            );
-        }
+        // if (IERC20(loanToken).balanceOf(address(this)) < repayAmount) {
+        //     IERC20(loanToken).transferFrom(
+        //         msg.sender,
+        //         address(this),
+        //         flashLoanFee + 1
+        //     );
+        // }
 
         _callDataBzx = CallDataBzx({
             iniCollateralTokenBal: IERC20(collateralToken).balanceOf(
                 address(this)
             ),
-            loanTokenRepayAmount: repayAmount
+            loanTokenRepayAmount: flashLoanAmount
         });
         initiateFlashLoanBzx(
             iToken,
             loanToken,
             collateralToken,
             bZxAddress,
+            oneInchAddress,
             loanId,
             receiver,
             flashLoanAmount
@@ -159,6 +162,7 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         address loanToken,
         address collateralToken,
         address bZxAddress,
+        address oneInchAddress,
         bytes32 loanId,
         address receiver,
         uint256 flashLoanAmount
@@ -199,15 +203,32 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
                     collateralTokenProfit
                 );
             }
-            IBZx(bZxAddress).swapExternal(
-                collateralToken,
-                loanToken,
-                address(this),
-                address(this),
+            // IBZx(bZxAddress).swapExternal(
+            //     collateralToken,
+            //     loanToken,
+            //     address(this),
+            //     address(this),
+            //     collateralTokenProfit,
+            //     requiredLoanTokenAmount,
+            //     ""
+            // );
+
+            (uint256 returnAmount, uint256[] memory distribution) = 
+            IOneSplit(oneInchAddress).getExpectedReturn(
+                IERC20(collateralToken), 
+                IERC20(loanToken), 
+                collateralTokenProfit, 
+                0, // parts - not recommented to use by oneinch
+                0); // flags
+            IOneSplit(oneInchAddress).swap(
+                IERC20(collateralToken),
+                IERC20(loanToken),
                 collateralTokenProfit,
                 requiredLoanTokenAmount,
-                ""
+                distribution,           
+                0 // flags
             );
+
         }
 
         repayFlashLoanBzx(loanToken, iToken, _callDataBzx.loanTokenRepayAmount);

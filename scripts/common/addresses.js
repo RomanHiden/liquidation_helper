@@ -2,6 +2,7 @@ module.exports = {
     kovan: {
         Liquidator: '0x7dC0782C3B6a529D6274fbeC99465E8F0140874C',
         Bzx: '0xAbd9372723C735D426D0a760D047206Fe115ee6d',
+        OneInch: '0xC586BeF4a0992C495Cf22e1aeEE4E446CECDee0E',
         iTokenList: [
             ['1', '0x9D2015Dd5306C08bDd8530605137d26c04DEDBD8', '0xe65d99a06d0ded0d318e31db3ae5d77629c625fc', 'Fulcrum fWETH iToken', 'ifWETH', '1'],
             ['1', '0xaaC9822F31e5Aefb32bC228DcF259F23B49B9855', '0x20BdF254Ca63883c3a83424753BB40185AF29cE4', 'Fulcrum USDC iToken', 'iUSDC', '1'],
@@ -28,6 +29,7 @@ module.exports = {
     mainnet: {
         Liquidator: '0x',
         Bzx: '0x1cf226e9413addaf22412a2e182f9c0de44af002',
+        OneInch: '0xC586BeF4a0992C495Cf22e1aeEE4E446CECDee0E',
         iTokenList: [
             ['1', '0x14094949152EDDBFcd073717200DA82fEd8dC960', '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359', 'Fulcrum SAI iToken', 'iSAI', '1'],
             ['1', '0x493c57c4763932315a328269e1adad09653b9081', '0x6b175474e89094c44da98b954eedeac495271d0f', 'Fulcrum DAI iToken', 'iDAI', '1'],

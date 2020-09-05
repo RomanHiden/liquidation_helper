@@ -9,14 +9,16 @@ const listen = async (world) => {
     const web3 = world.web3;
     const Bzx = new web3.eth.Contract(iBzxJson.abi, world.contractAddresses.Bzx);
 
-    let activeLoans = await Bzx.methods.getActiveLoans(0, 100, true).call();
+    let activeLoans = await Bzx.methods.getActiveLoans(0, 1, true).call();
     activeLoans.forEach(async (loan) => {
       // console.table(loan);
+      if(loan.loanId == "0x3b904d02a0301fc101a4db24107cda6516b2051069def924abd58c2d4832b52d")
       processLiquidatableLoan(world, loan);
     })
     console.log(`\nCount - ${activeLoans.length}`);
 
   } catch (error) {
+    console.log("error", loan)
     throw error;
   }
 }
@@ -28,7 +30,7 @@ const processLiquidatableLoan = (world, loan) => {
   const flashLoanPlatformSwitch = getSwitchForFlashLoan(world, loan.loanToken);
 
   const txParams = {};
-
+  console.log("flashLoanPlatformSwitch", flashLoanPlatformSwitch);
   if (flashLoanPlatformSwitch.length === 1) {
     txParams.flashLoanPlatform = flashLoanPlatformSwitch[0];
   } else if (flashLoanPlatformSwitch.length === 2) {
@@ -45,7 +47,8 @@ const createLiquidationTxn = async (world, loan, txParams) => {
 
     const Liquidator = new world.web3.eth.Contract(LiquidatorJson.abi, world.contractAddresses.Liquidator);
     const collateralReceiver = process.env.COLLATERAL_RECEIVER || world.accounts[0];
-
+    console.log("tx param", txParams.flashLoanPlatform);
+    console.log("tx details",loan.loanToken, loan.collateralToken, world.contractAddresses.Bzx, loan.loanId, collateralReceiver, loan.maxLiquidatable);
     let data;
     if (txParams.flashLoanPlatform === 1) {
       data = Liquidator.methods['startWithDyDx'](world.contractAddresses.dydx.solo, loan.loanToken, loan.collateralToken,
@@ -53,9 +56,9 @@ const createLiquidationTxn = async (world, loan, txParams) => {
         .encodeABI();
     } else {
       const iTokenAddress = getITokenAddressFromLoanToken(world, loan.loanToken);
-
+      console.log("iTokenAddress", iTokenAddress);
       data = Liquidator.methods['startWithBzx'](iTokenAddress, loan.loanToken, loan.collateralToken,
-        world.contractAddresses.Bzx, loan.loanId, collateralReceiver, loan.maxLiquidatable)
+        world.contractAddresses.Bzx, world.contractAddresses.OneInc, loan.loanId, collateralReceiver, loan.maxLiquidatable)
         .encodeABI();
     }
 
@@ -70,11 +73,12 @@ const createLiquidationTxn = async (world, loan, txParams) => {
       data: data
     };
     world.txIssuerWallet.nonce++;
-
+    console.log("tx", tx)
     let signedTx = await world.web3.eth.accounts.signTransaction(tx, world.txIssuerWallet.privateKey);
     sendSignedTx(world, signedTx);
 
   } catch (error) {
+    console.log("error", txParams, data, tx);
     throw error;
   }
 }
