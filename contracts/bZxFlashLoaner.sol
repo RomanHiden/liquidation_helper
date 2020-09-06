@@ -33,7 +33,6 @@ contract bZxFlashLoaner {
                 flashLoanAmount
             )
         );
-        require(false, "un fuck life");
     }
 
     function repayFlashLoanBzx(

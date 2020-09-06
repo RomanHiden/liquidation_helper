@@ -27,7 +27,8 @@ def getITokenAddress(underlyingToken):
 
 def test_marginTradeFromPool_sim(bzx, liquidator, accounts, ERC20):
     loans = bzx.getActiveLoans(0, 10, True)
-    print("loans", loans[0])
+    print("loans", loans)
+    # print("loans", loans)
     loan = loans[0]
 
     loanId = loan[0]
