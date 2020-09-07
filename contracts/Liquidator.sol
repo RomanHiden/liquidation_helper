@@ -31,92 +31,92 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
 
     CallDataBzx _callDataBzx;
 
-    function startWithDyDx(
-        address dydxSolo,
-        address loanToken,
-        address collateralToken,
-        address bZxAddress,
-        bytes32 loanId,
-        address receiver,
-        uint256 flashLoanAmount
-    ) public payable {
-        if (IERC20(loanToken).balanceOf(address(this)) < soloFees) {
-            IERC20(loanToken).transferFrom(msg.sender, address(this), soloFees);
-        }
+    // function startWithDyDx(
+    //     address dydxSolo,
+    //     address loanToken,
+    //     address collateralToken,
+    //     address bZxAddress,
+    //     bytes32 loanId,
+    //     address receiver,
+    //     uint256 flashLoanAmount
+    // ) public payable {
+    //     if (IERC20(loanToken).balanceOf(address(this)) < soloFees) {
+    //         IERC20(loanToken).transferFrom(msg.sender, address(this), soloFees);
+    //     }
 
-        _callData = CallData({
-            bZxAddress: bZxAddress,
-            loanId: loanId,
-            receiver: receiver,
-            collateralToken: collateralToken,
-            flashLoanAmount: flashLoanAmount,
-            iniCollateralTokenBal: IERC20(collateralToken).balanceOf(receiver)
-        });
-        initateFlashLoan(dydxSolo, loanToken, flashLoanAmount);
-    }
+    //     _callData = CallData({
+    //         bZxAddress: bZxAddress,
+    //         loanId: loanId,
+    //         receiver: receiver,
+    //         collateralToken: collateralToken,
+    //         flashLoanAmount: flashLoanAmount,
+    //         iniCollateralTokenBal: IERC20(collateralToken).balanceOf(receiver)
+    //     });
+    //     initateFlashLoan(dydxSolo, loanToken, flashLoanAmount);
+    // }
 
-    function afterLoanSteps(address loanedTokenAddress, uint256 repayAmount)
-        internal
-    {
-        address bZxAddress = _callData.bZxAddress;
-        if (
-            IERC20(loanedTokenAddress).allowance(address(this), bZxAddress) <
-            _callData.flashLoanAmount
-        ) {
-            IERC20(loanedTokenAddress).approve(
-                bZxAddress,
-                _callData.flashLoanAmount
-            );
-        }
+    // function afterLoanSteps(address loanedTokenAddress, uint256 repayAmount)
+    //     internal
+    // {
+    //     address bZxAddress = _callData.bZxAddress;
+    //     if (
+    //         IERC20(loanedTokenAddress).allowance(address(this), bZxAddress) <
+    //         _callData.flashLoanAmount
+    //     ) {
+    //         IERC20(loanedTokenAddress).approve(
+    //             bZxAddress,
+    //             _callData.flashLoanAmount
+    //         );
+    //     }
 
-        liquidateBzxLoan(
-            _callData.bZxAddress,
-            _callData.loanId,
-            _callData.receiver,
-            _callData.flashLoanAmount
-        );
+    //     liquidateBzxLoan(
+    //         _callData.bZxAddress,
+    //         _callData.loanId,
+    //         _callData.receiver,
+    //         _callData.flashLoanAmount
+    //     );
 
-        uint256 finalCollateralTokenBal = IERC20(_callData.collateralToken)
-            .balanceOf(_callData.receiver);
-        require(
-            finalCollateralTokenBal >= _callData.iniCollateralTokenBal,
-            "Liquidation not profitable"
-        );
+    //     uint256 finalCollateralTokenBal = IERC20(_callData.collateralToken)
+    //         .balanceOf(_callData.receiver);
+    //     require(
+    //         finalCollateralTokenBal >= _callData.iniCollateralTokenBal,
+    //         "Liquidation not profitable"
+    //     );
 
-        uint256 finalLoanTokenBal = IERC20(loanedTokenAddress).balanceOf(
-            address(this)
-        );
-        if (finalLoanTokenBal < repayAmount) {
-            // swap collateral token with loan token
-            uint256 collateralTokenProfit = finalCollateralTokenBal.sub(
-                _callData.iniCollateralTokenBal
-            );
-            uint256 requiredLoanTokenAmount = repayAmount.sub(
-                finalLoanTokenBal
-            );
+    //     uint256 finalLoanTokenBal = IERC20(loanedTokenAddress).balanceOf(
+    //         address(this)
+    //     );
+    //     if (finalLoanTokenBal < repayAmount) {
+    //         // swap collateral token with loan token
+    //         uint256 collateralTokenProfit = finalCollateralTokenBal.sub(
+    //             _callData.iniCollateralTokenBal
+    //         );
+    //         uint256 requiredLoanTokenAmount = repayAmount.sub(
+    //             finalLoanTokenBal
+    //         );
 
-            if (
-                IERC20(_callData.collateralToken).allowance(
-                    address(this),
-                    bZxAddress
-                ) < collateralTokenProfit
-            ) {
-                IERC20(_callData.collateralToken).approve(
-                    bZxAddress,
-                    collateralTokenProfit
-                );
-            }
-            IBZx(bZxAddress).swapExternal(
-                _callData.collateralToken,
-                loanedTokenAddress,
-                address(this),
-                address(this),
-                collateralTokenProfit,
-                requiredLoanTokenAmount,
-                ""
-            );
-        }
-    }
+    //         if (
+    //             IERC20(_callData.collateralToken).allowance(
+    //                 address(this),
+    //                 bZxAddress
+    //             ) < collateralTokenProfit
+    //         ) {
+    //             IERC20(_callData.collateralToken).approve(
+    //                 bZxAddress,
+    //                 collateralTokenProfit
+    //             );
+    //         }
+    //         IBZx(bZxAddress).swapExternal(
+    //             _callData.collateralToken,
+    //             loanedTokenAddress,
+    //             address(this),
+    //             address(this),
+    //             collateralTokenProfit,
+    //             requiredLoanTokenAmount,
+    //             ""
+    //         );
+    //     }
+    // }
 
     function startWithBzx(
         address iToken,
@@ -128,16 +128,7 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         address receiver,
         uint256 flashLoanAmount
     ) public payable {
-        uint256 flashLoanFee = flashLoanAmount.mul(bZxFeePercentage).div(1e20);
-        uint256 repayAmount = flashLoanAmount.add(flashLoanFee);
 
-        if (IERC20(loanToken).balanceOf(address(this)) < repayAmount) {
-            IERC20(loanToken).transferFrom(
-                msg.sender,
-                address(this),
-                flashLoanFee + 1
-            );
-        }
     
         _callDataBzx = CallDataBzx({
             iniCollateralTokenBal: IERC20(collateralToken).balanceOf(
@@ -168,7 +159,6 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
         uint256 flashLoanAmount
     ) public {
         receiver;    // shh
-       
         if (
             IERC20(loanToken).allowance(address(this), bZxAddress) <
             flashLoanAmount
@@ -204,31 +194,32 @@ contract Liquidator is DydxFlashloaner, bZxFlashLoaner, Ownable {
                     collateralTokenProfit
                 );
             }
-            // IBZx(bZxAddress).swapExternal(
-            //     collateralToken,
-            //     loanToken,
-            //     address(this),
-            //     address(this),
-            //     collateralTokenProfit,
-            //     requiredLoanTokenAmount,
-            //     ""
-            // );
-
-            (uint256 returnAmount, uint256[] memory distribution) = 
-            IOneSplit(oneInchAddress).getExpectedReturn(
-                IERC20(collateralToken), 
-                IERC20(loanToken), 
-                collateralTokenProfit, 
-                0, // parts - not recommented to use by oneinch
-                0); // flags
-            IOneSplit(oneInchAddress).swap(
-                IERC20(collateralToken),
-                IERC20(loanToken),
+            IBZx(bZxAddress).swapExternal(
+                collateralToken,
+                loanToken,
+                address(this),
+                address(this),
                 collateralTokenProfit,
                 requiredLoanTokenAmount,
-                distribution,           
-                0 // flags
+                ""
             );
+
+            // (uint256 returnAmount, uint256[] memory distribution) = 
+            // IOneSplit(oneInchAddress).getExpectedReturn(
+            //     IERC20(collateralToken), 
+            //     IERC20(loanToken), 
+            //     collateralTokenProfit, 
+            //     0, // parts - not recommented to use by oneinch
+            //     0); // flags
+
+            // IOneSplit(oneInchAddress).swap(
+            //     IERC20(collateralToken),
+            //     IERC20(loanToken),
+            //     collateralTokenProfit,
+            //     requiredLoanTokenAmount,
+            //     new uint256[](0),           
+            //     0 // flags
+            // );
 
         }
 

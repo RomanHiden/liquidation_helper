@@ -28,15 +28,15 @@ const processLiquidatableLoan = (world, loan) => {
 
   const flashLoanPlatformSwitch = getSwitchForFlashLoan(world, loan.loanToken);
 
-  const txParams = {};
-  console.log("flashLoanPlatformSwitch", flashLoanPlatformSwitch);
-  if (flashLoanPlatformSwitch.length === 1) {
-    txParams.flashLoanPlatform = flashLoanPlatformSwitch[0];
-  } else if (flashLoanPlatformSwitch.length === 2) {
-    txParams.flashLoanPlatform = process.env.FLASHLOAN_PREFERENCE
-  } else {
-    throw new Error(`Unhandled Platforms`);
-  }
+  // const txParams = {};
+  // console.log("flashLoanPlatformSwitch", flashLoanPlatformSwitch);
+  // if (flashLoanPlatformSwitch.length === 1) {
+  //   txParams.flashLoanPlatform = flashLoanPlatformSwitch[0];
+  // } else if (flashLoanPlatformSwitch.length === 2) {
+  //   txParams.flashLoanPlatform = process.env.FLASHLOAN_PREFERENCE
+  // } else {
+  //   throw new Error(`Unhandled Platforms`);
+  // }
 
   createLiquidationTxn(world, loan, txParams);
 }
@@ -48,18 +48,18 @@ const createLiquidationTxn = async (world, loan, txParams) => {
     const collateralReceiver = process.env.COLLATERAL_RECEIVER || world.accounts[0];
     console.log("tx param", txParams.flashLoanPlatform);
     console.log("tx details",loan.loanToken, loan.collateralToken, world.contractAddresses.Bzx, loan.loanId, collateralReceiver, loan.maxLiquidatable);
-    let data;
-    if (txParams.flashLoanPlatform === 1) {
-      data = Liquidator.methods['startWithDyDx'](world.contractAddresses.dydx.solo, loan.loanToken, loan.collateralToken,
-        world.contractAddresses.Bzx, loan.loanId, collateralReceiver, loan.maxLiquidatable)
-        .encodeABI();
-    } else {
-      const iTokenAddress = getITokenAddressFromLoanToken(world, loan.loanToken);
-      console.log("iTokenAddress", iTokenAddress);
-      data = Liquidator.methods['startWithBzx'](iTokenAddress, loan.loanToken, loan.collateralToken,
-        world.contractAddresses.Bzx, world.contractAddresses.OneInc, loan.loanId, collateralReceiver, loan.maxLiquidatable)
-        .encodeABI();
-    }
+    // let data;
+    // if (txParams.flashLoanPlatform === 1) {
+    //   data = Liquidator.methods['startWithDyDx'](world.contractAddresses.dydx.solo, loan.loanToken, loan.collateralToken,
+    //     world.contractAddresses.Bzx, loan.loanId, collateralReceiver, loan.maxLiquidatable)
+    //     .encodeABI();
+    // } else {
+    const iTokenAddress = getITokenAddressFromLoanToken(world, loan.loanToken);
+    console.log("iTokenAddress", iTokenAddress);
+    data = Liquidator.methods['startWithBzx'](iTokenAddress, loan.loanToken, loan.collateralToken,
+      world.contractAddresses.Bzx, world.contractAddresses.OneInc, loan.loanId, collateralReceiver, loan.maxLiquidatable)
+      .encodeABI();
+    // }
 
     let gasPrice = await getGasPrice(world);
 
